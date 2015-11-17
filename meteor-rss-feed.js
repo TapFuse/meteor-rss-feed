@@ -1,14 +1,15 @@
-Meteor.startup(function () {
-  tp_rssQueries.find().observe({
-    added: function(doc) {
-      Meteor.call('getRssFeed', doc.link);
-    }
-  });
-});
+// Meteor.startup(function () {
+//   tp_rssQueries.find({}, {limit: 1}).observe({
+//     added: function(doc) {
+//       Meteor.call('getRssFeedByQueryId', doc.queryId);
+//     }
+//   });
+// });
 
 //Insert used to cache items from RSS feed.
-const wrappedRssFeedInsert = Meteor.bindEnvironment(function(item) {
-  tp_rssCache.upsert({link: item.link}, {$set: {
+const wrappedRssFeedInsert = Meteor.bindEnvironment(function(item, queryId) {
+  tp_rssCache.upsert({link: item.link, queryId: queryId}, {$set: {
+    queryId: queryId,
     title: item.title,
     description: item.description,
     pubDate: item.pubDate,
@@ -23,11 +24,14 @@ const wrappedRssFeedInsert = Meteor.bindEnvironment(function(item) {
 }, "Failed to insert tweet into tp_rssCache collection.");
 
 Meteor.methods({
-  getRssFeed: function(link) {
-    const feedData = Scrape.feed(link);
-    if (feedData) {
-      for (const item of feedData.items) {
-        wrappedRssFeedInsert(item);
+  getRssFeedByQueryId: function(queryId) {
+    const link = tp_rssQueries.findOne({queryId: queryId});
+    if(link) {
+      const feedData = Scrape.feed(link.link);
+      if (feedData) {
+        for (const item of feedData.items) {
+          wrappedRssFeedInsert(item, link.queryId);
+        }
       }
     }
   },
@@ -38,13 +42,16 @@ Meteor.methods({
         const feedData = Scrape.feed(link.link);
         if (feedData) {
           for (const item of feedData.items) {
-            wrappedRssFeedInsert(item);
+            wrappedRssFeedInsert(item, link.queryId);
           }
         }
       }
     }
   },
-  addRssFeedQuery: function(link) {
-    tp_rssQueries.insert({link: link});
+  addRssFeedQuery: function(queryId, link) {
+    tp_rssQueries.insert({
+      queryId: queryId,
+      link: link
+    });
   }
 });
