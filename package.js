@@ -1,7 +1,7 @@
 Package.describe({
   name: 'tapfuse:meteor-rss-feed',
-  version: '0.0.1',
-  summary: 'RSS feed caching',
+  version: '1.0.0',
+  summary: 'DO_NOT_USE RSS feed caching',
   git: 'https://github.com/TapFuse/meteor-rss-feed.git',
   documentation: 'README.md'
 });
